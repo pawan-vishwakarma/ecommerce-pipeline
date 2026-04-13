@@ -1,0 +1,6 @@
+config {
+  type: "declaration",
+  database: "amiable-hour-315409",
+  schema: "ecommerce_dataset",
+  name: "orders_raw"
+}
