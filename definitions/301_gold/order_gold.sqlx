@@ -1,0 +1,19 @@
+config {
+  type: "table",
+  name: "orders_gold",
+  description: "Customer-level aggregation of sales metrics"
+}
+
+SELECT
+  customer_id,
+  -- Using MAX to ensure we get a single name if there are slight variations
+  MAX(customer_first_name) AS customer_first_name,
+  MAX(customer_last_name) AS customer_last_name,
+  COUNT(order_id) AS total_orders,
+  SUM(revenue) AS total_revenue,
+  SUM(discount_amount) AS total_discount,
+  SUM(shipping_cost) AS total_shipping_cost,
+  AVG(revenue) AS avg_order_value
+FROM ${ref("orders_silver")}
+GROUP BY
+  customer_id
