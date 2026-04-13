@@ -1,62 +1,68 @@
-This README is designed to reflect your specific **Medallion Architecture** (Bronze $\rightarrow$ Silver $\rightarrow$ Gold) and your updated configuration for the `ecommerce_dataset` in the Montreal region.
+# 📊 E-Commerce Automated ELT Pipeline
+
+This repository contains the end-to-end automation for ingesting daily e-commerce data from Gmail, processing it through a Medallion architecture in BigQuery, and providing an interactive SQL assistant for end-users.
+
+## 🏗 System Architecture
+
+
+
+The data flows through four distinct stages:
+1.  **Ingestion (MailToGCS):** A Google Apps Script monitors Gmail for daily CSV attachments and streams them to a Google Cloud Storage (GCS) bucket.
+2.  **Abstraction (GCSToExternalTable):** A BigQuery External Table acts as a permanent pointer to the GCS file, allowing for instant "loading-free" access to raw data.
+3.  **Transformation (Dataform):** * **Bronze:** Incremental upsert of raw data into a persistent history table.
+    * **Silver:** Deduplication and cleaning using window functions.
+    * **Gold:** Aggregated business metrics (LTV, Order frequency).
+4.  **Consumption (ChatApp):** A natural language interface that translates user questions into SQL queries against the **Gold** layer.
 
 ---
 
-# E-commerce Data Pipeline (Dataform)
+## 📂 Repository Structure
 
-This project manages the ELT (Extract, Load, Transform) pipeline for e-commerce order data within BigQuery using **Dataform Core 3.0.42**.
-
-## 🏗 Architecture: The Medallion Flow
-
-The pipeline follows a tiered data architecture to ensure data quality and traceability:
-
-1.  **Bronze (`orders_bronze`)**: A raw-to-refined copy of the source data. This layer captures the history and original state of every order record.
-2.  **Silver (`orders_silver`)**: The "Clean" layer. We apply deduplication logic here to ensure that only the most recent version of an order is preserved.
-3.  **Gold (`orders_gold`)**: The "Reporting" layer. Data is aggregated at the customer level to provide high-level business metrics like Lifetime Value (LTV) and order frequency.
+* **`/MailToGCS`**: Contains `main.gs`. Handles Gmail searching, blob extraction, and GCS upload.
+* **`/GCSToExternalTable`**: SQL script to define the BigQuery External Table schema and GCS URI.
+* **`/Dataform`**: The Core 3.0.42 project including `definitions/` (Bronze, Silver, Gold SQLX files) and `workflow_settings.yaml`.
+* **`/ChatApp`**: Python/Streamlit (or similar) code for the LLM-powered SQL assistant.
 
 ---
 
-## ⚙️ Configuration
+## 💰 Cost Analysis (Estimated)
 
-- **Project ID**: `amiable-hour-315409`
-- **Default Dataset**: `ecommerce_dataset`
-- **Location**: `northamerica-northeast1` (Montreal)
-- **Assertion Dataset**: `ecommerce_dataset_assertions`
+Based on standard Google Cloud Tiering (North America/Montreal):
 
----
-
-## 📂 Table Definitions
-
-### 1. Bronze Layer
-* **Source**: `ecommerce_dataset.orders_raw`
-* **Transformation**: Direct selection of all columns to move data into the managed Dataform workflow.
-
-### 2. Silver Layer
-* **Logic**: Uses a `ROW_NUMBER()` window function partitioned by `order_id` and ordered by `order_date DESC`.
-* **Goal**: Deduplication. It removes stale records and only keeps the latest update for any given order.
-
-### 3. Gold Layer
-* **Logic**: Aggregates metrics (Sum of revenue, Average order value, Count of orders) grouped by `customer_id`.
-* **Goal**: Powering BI dashboards and marketing analysis.
+| Component | Service | Cost Factor | Estimated Monthly Cost |
+| :--- | :--- | :--- | :--- |
+| **Orchestration** | Apps Script | Included with Workspace | $0.00 |
+| **Storage** | Cloud Storage | Nearline/Standard | ~$0.02 per GB |
+| **Compute** | Dataform | Free for Core | $0.00 |
+| **Processing** | BigQuery | Query Scanning | ~$5.00 per TB (Free tier first 1TB) |
+| **ChatApp** | Gemini API / Vertex | Token usage | Variable (starts at free/low tier) |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Moving to Production
 
-1.  **Prerequisites**:
-    * Ensure the BigQuery dataset `ecommerce_dataset` exists in the `northamerica-northeast1` region.
-    * Service account must have `BigQuery Data Editor` and `BigQuery Job User` roles.
+To transition from this "Dev" setup to a Production-grade environment, follow these steps:
 
-2.  **Compilation**:
-    Click the **Compile** button in the Dataform UI to build the dependency graph. Ensure the graph shows a linear flow:
-    `orders_raw` $\rightarrow$ `orders_bronze` $\rightarrow$ `orders_silver` $\rightarrow$ `orders_gold`.
+### 1. Security & Governance
+* **Service Accounts:** Move away from personal `ScriptApp.getOAuthToken()`. Create a dedicated Service Account with `Storage Object Admin` and `Dataform Editor` roles.
+* **Secrets Management:** Use **Google Cloud Secret Manager** to store Project IDs or sensitive email filters instead of hardcoding them in scripts.
 
-3.  **Execution**:
-    To build the full pipeline, run the tags or execute the Gold table with "Run with Dependencies" selected.
+### 2. CI/CD Pipeline
+* **Git Integration:** Connect your Dataform repository to GitHub/GitLab. 
+* **Environments:** Use Dataform's **Environments** feature to separate `development` and `production` datasets so you don't break production reports while testing new code.
+
+### 3. Monitoring & Alerts
+* **Error Notifications:** Update the Apps Script to send a Slack/Email alert if the `UrlFetch` fails.
+* **Dataform Assertions:** Add `assertions` to the Gold layer (e.g., `total_revenue > 0`) to catch data quality issues automatically during the run.
+
+### 4. ChatApp Optimization
+* **Metadata Layer:** Provide the ChatApp with the `definitions.sqlx` descriptions so it understands the context of the columns (e.g., "Revenue includes tax").
+* **Read-Only Access:** Ensure the ChatApp's database user has **strictly** `DATA_VIEWER` permissions—never `DATA_EDITOR`.
 
 ---
 
-## 🛠 Troubleshooting
-
-* **Location Errors**: If you see a "Not found" error in `northamerica-northeast1`, verify that your source `orders_raw` table is located in the same Montreal region. BigQuery cannot perform cross-region joins.
-* **Table Not Found**: Ensure you execute the tables in order. `orders_silver` will fail if `orders_bronze` has not been created yet.
+## 🛠 Setup Instructions
+1.  Deploy `MailToGCS` script and set a time-driven trigger.
+2.  Execute the `GCSToExternalTable` script in the BigQuery console.
+3.  Initialize the Dataform project and create a **Workflow Configuration** to schedule the daily run.
+4.  Configure the ChatApp with your BigQuery project credentials.

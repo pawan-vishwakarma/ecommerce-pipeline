@@ -1,0 +1,15 @@
+# --- Streamlit Chatbot & UI ---
+streamlit==1.32.0
+
+# --- Google Cloud SDKs ---
+google-cloud-aiplatform==1.44.0  # For Gemini/Vertex AI
+google-cloud-bigquery==3.19.0    # For executing SQL and fetching results
+google-cloud-storage==2.15.0     # For interacting with GCS buckets
+google-cloud-dataform==0.5.4     # If you decide to trigger Dataform via Python
+
+# --- Data Handling ---
+pandas==2.2.1                    # For displaying BigQuery results in Streamlit
+db-dtypes==1.2.0                 # Required for BigQuery to Pandas conversion
+
+# --- Utilities ---
+python-dotenv==1.0.1             # For managing environment variables/secrets

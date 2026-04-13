@@ -1,0 +1,4 @@
+defaultProject: amiable-hour-315409
+defaultDataset: ecommerce_dataset
+defaultAssertionDataset: dataform_assertions
+dataformCoreVersion: 3.0.42
