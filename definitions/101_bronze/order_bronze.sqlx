@@ -1,0 +1,34 @@
+config {
+  type: "table",
+  schema: "ecommerce_dataset",
+  name: "orders_bronze",
+  description: "Cleaned bronze layer for ecommerce orders"
+}
+
+SELECT
+  order_id,
+  customer_id,
+  customer_first_name,
+  customer_last_name,
+  customer_email,
+  city,
+  state,
+  zip_code,
+  store_name,
+  product_name,
+  category,
+  quantity,
+  unit_price,
+  discount_pct,
+  discount_amount,
+  revenue,
+  shipping_cost,
+  shipping_method,
+  shipping_status,
+  payment_method,
+  is_returned,
+  notes,
+  order_date,
+  estimated_delivery_date
+-- Use ref() to point to your source so Dataform can track dependencies
+FROM ${ref("orders_raw")}
