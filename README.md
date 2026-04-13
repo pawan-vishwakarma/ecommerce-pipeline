@@ -70,13 +70,7 @@ To transition from this "Dev" setup to a Production-grade environment, follow th
 
 ---
 
-Excellent addition. Moving from a "manual" or "low-code" Apps Script setup to **Cloud Functions** and **Cloud Composer (Managed Airflow)** is the standard path for scaling data engineering on GCP.
-
-Here is the updated **Future Scope** section for your `README.md`.
-
----
-
-## 🔮 Future Scope: Production Scaling
+## 🔮 Future Scope: Scaling
 
 To transition this MVP into a high-availability, enterprise-grade production system, the following architectural upgrades are planned:
 
